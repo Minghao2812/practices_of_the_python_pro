@@ -3,7 +3,7 @@ from typing import Union
 
 
 class DatabaseManager:
-    def __init__(self, database_filename) -> None:
+    def __init__(self, database_filename: str) -> None:
         self.connection = sqlite3.connect(database_filename)
 
     def __del__(self):
@@ -17,6 +17,11 @@ class DatabaseManager:
             return cursor  # cursor stores results.
 
     def create_table(self, table_name: str, columns: dict):
+        """
+        :table_name: table name should not have .db suffix.
+
+        :columns: column name as dictionary key, data type as dictionary value.
+        """
         columns_with_types = [
             f'{column_name} {data_type}'
             for column_name, data_type in columns.items()
@@ -33,8 +38,15 @@ class DatabaseManager:
             tuple(data.values()))
 
     def delete(self, table_name: str, criteria: dict):
+        """
+        Example:
+
+        delete('a_table', criteria={'column1': condition1, 'column2': condition2})
+        """
         placeholders = [f'{column} = ?' for column in criteria.keys()]
+        # placeholders is a list like ['column1 = ?', 'column2 = ?']
         delete_criteria = ' AND '.join(placeholders)
+        # delete_criteria is a string like 'column1 = ? AND column2 = ?'
         self._execute(f'''DELETE FROM {table_name} WHERE {delete_criteria};''',
                       tuple(criteria.values()))
 
