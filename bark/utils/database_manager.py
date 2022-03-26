@@ -50,19 +50,22 @@ class DatabaseManager:
         self._execute(f'''DELETE FROM {table_name} WHERE {delete_criteria};''',
                       tuple(criteria.values()))
 
-    def select(self,
-               table_name: str,
-               criteria: dict = None,
-               order_by: str = None):
+    def select(
+        self,
+        table_name: str,
+        order_by: str = None,
+        criteria: dict = None,
+    ):
         # criteria = criteria or {}
         query = f'SELECT * FROM {table_name}'
+
+        if order_by:
+            query += f' ORDER BY {order_by}'
 
         if criteria:
             placeholders = [f'{column} = ?' for column in criteria.keys()]
             select_criteria = ' AND '.join(placeholders)
             query += f' WHERE {select_criteria}'
+            return self._execute(query, tuple(criteria.values()))
 
-        if order_by:
-            query += f' ORDER BY {order_by}'
-
-        return self._execute(query, criteria.values())
+        return self._execute(query)
