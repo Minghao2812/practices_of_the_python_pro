@@ -1,10 +1,13 @@
 """All commands to manipulate table 'bookmarks' in database 'bookmarks.db'. Business logic layer."""
 
 from database_manager import DatabaseManager
-import datetime
+from datetime import datetime
 import sys
 
-db = DatabaseManager('bookmarks.db')
+db = DatabaseManager(
+    'bookmarks.db')  # Simply importing this module won't run this line.
+
+#NOTE: Why not naming all the <execute> method below as <_execute>? They're not going to be called explicitly.
 
 
 class CreateBookmarksTableCommand:
@@ -33,7 +36,7 @@ class ListBookmarksCommand:
         self.order_by = order_by
 
     def execute(self):
-        return db.select('bookmarks', order_by=self.order_by)
+        return db.select('bookmarks', order_by=self.order_by).fetchall()
 
 
 class DeleteBookmardCommand:
