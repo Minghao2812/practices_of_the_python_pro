@@ -10,7 +10,7 @@ class DatabaseManager:
         self.connection.close()
 
     def _execute(self, query: str, values: Union[list, tuple] = None):
-        with self.connection:  # Using with keyword to roll back when error occurs.
+        with self.connection:  # Using with keyword to roll back when error occurs. (sqlite3's feature)
             cursor = self.connection.cursor()
             cursor.execute(query, values or [])
             # When values is None, keep []; otherwise, keep values.
@@ -18,6 +18,8 @@ class DatabaseManager:
 
     def create_table(self, table_name: str, columns: dict):
         """
+        Parameters
+        ----------
         :table_name: table name should not have .db suffix.
 
         :columns: column name as dictionary key, data type as dictionary value.
@@ -31,6 +33,13 @@ class DatabaseManager:
         )
 
     def add(self, table_name: str, data: dict):
+        """
+        Original SQL parameter statement
+        ------------
+        INSERT INTO <table_name>
+        (<column1>, <column2>, ...)
+        VALUES (?, ?, ...);
+        """
         column_names = ', '.join(data.keys())
         placeholders = ', '.join('?' * len(data))
         self._execute(
@@ -39,8 +48,13 @@ class DatabaseManager:
 
     def delete(self, table_name: str, criteria: dict):
         """
-        Example:
+        Original SQL parameter statement
+        ------------
+        DELETE FROM <table_name>
+        WHERE column1 = ? AND column2 = ?;
 
+        Example
+        -------
         delete('a_table', criteria={'column1': condition1, 'column2': condition2})
         """
         placeholders = [f'{column} = ?' for column in criteria.keys()]
@@ -69,3 +83,32 @@ class DatabaseManager:
             return self._execute(query, tuple(criteria.values()))
 
         return self._execute(query)
+
+    def update(self, table_name: str, criteria: dict, data: dict):
+        """
+        Original SQL parameter statement
+        ------------
+        UPDATE <table_name>
+        SET column0 = ?
+        WHERE column1 = ? AND column2 = ?;
+        """
+
+        update_placeholders = [f'{column} = ?' for column in criteria.keys()]
+        update_criteria = ' AND '.join(update_placeholders)
+
+        data_placeholders = ', '.join(f'{key} = ?' for key in data.keys())
+
+        values = tuple(data.values()) + tuple(criteria.values())
+        #NOTE: this combination of criteria and data is amazing!
+
+        self._execute(
+            f'''UPDATE {table_name} SET {data_placeholders} WHERE {update_criteria};''',
+            values)
+
+
+if __name__ == '__main__':
+    # Test DatabaseManager.update()
+    db = DatabaseManager('bookmarks.db')
+    print(db.select('bookmarks').fetchall())
+    db.update('bookmarks', {'id': 1}, {'notes': 'TECH'})
+    print(db.select('bookmarks').fetchall())
